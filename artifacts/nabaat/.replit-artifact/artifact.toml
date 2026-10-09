@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/nabaat/"
+title = "Nabaat — Rooted in Care"
+description = "A responsive launch website for Nabaat, a new Abu Dhabi plant and flower business. Includes a sample plant catalog, plant finder, practical care guidance, brand story, and honest enquiry prototype."
+version = "1.0.0"
+id = "artifacts/nabaat"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/nabaat/" ]
+localPort = 25380
+
+[services.development]
+run = "pnpm --filter @workspace/nabaat run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/nabaat", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/nabaat/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "25380"
+BASE_PATH = "/nabaat/"
