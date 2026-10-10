@@ -1,0 +1,1 @@
+- [GitHub workspace auth](github-workspace-auth.md) — Confirm CLI/API access before creating a remote; an account-level connection may not be available in the workspace.
