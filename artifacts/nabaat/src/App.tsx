@@ -198,7 +198,7 @@ function Home() {
         </div>
       </section>
 
-      <section className="cta-band"><div className="container"><div className="eyebrow" style={{justifyContent:'center'}}>Stay in the loop</div><h2>Have a plant in mind?</h2><p>Tell us what you’re looking for. This prototype keeps your enquiry on your device and does not send it.</p><Link href="/contact" className="button" data-testid="link-home-enquiry">Make an enquiry <ArrowRight size={14}/></Link></div></section>
+      <section className="cta-band"><div className="container"><div className="eyebrow" style={{justifyContent:'center'}}>Stay in the loop</div><h2>Have a plant in mind?</h2><p>Tell us what you’re looking for. The Nabaat team can review an enquiry while the shop is getting ready to launch.</p><Link href="/contact" className="button" data-testid="link-home-enquiry">Make an enquiry <ArrowRight size={14}/></Link></div></section>
     </main>
   </Shell></>;
 }
@@ -339,16 +339,29 @@ function Contact() {
   const selected = products.find(p=>p.slug===query.get('product'));
   const whatsappDigits = launchConfig.whatsapp?.replace(/\D/g, '') ?? '';
   const hasSocialLinks = Boolean(launchConfig.socialLinks.instagram || launchConfig.socialLinks.tiktok);
-  const [status,setStatus] = useState<'idle'|'error'|'not-sent'>('idle');
+  const [status,setStatus] = useState<'idle'|'error'|'sending'|'sent'>('idle');
   const form = useForm<EnquiryValues>({
     resolver: zodResolver(enquirySchema),
     defaultValues: { name: '', email: '', topic: '', sample: selected?.slug ?? '', message: '' },
   });
-  function submit(_values: EnquiryValues) {
-    setStatus('not-sent');
+  async function submit(values: EnquiryValues) {
+    setStatus('sending');
+    try {
+      const apiBase = (import.meta.env.VITE_API_BASE_URL ?? '').replace(/\/+$/, '');
+      const response = await fetch(`${apiBase}/api/enquiries`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...values, website: '' }),
+      });
+      if (!response.ok) throw new Error('Enquiry service rejected the request');
+      setStatus('sent');
+      form.reset({ name: '', email: '', topic: '', sample: '', message: '' });
+    } catch {
+      setStatus('error');
+    }
   }
   return <><PageMeta path="/contact"/><Shell><main className="container">
-    <div className="page-intro"><div className="eyebrow">A note to Nabaat</div><h1>What are you looking for?</h1><p>Tell us what you have in mind. This is a local prototype form only; submitting does not send your message.</p></div>
+    <div className="page-intro"><div className="eyebrow">A note to Nabaat</div><h1>What are you looking for?</h1><p>Send an enquiry for the Nabaat team to review. Contact details and response times are still being confirmed.</p></div>
     <div className="form-wrap">
       <aside className="form-aside">
         <h2>Still getting ready.</h2>
@@ -361,10 +374,11 @@ function Contact() {
           <div><dt>Social links</dt><dd>{hasSocialLinks ? <>{launchConfig.socialLinks.instagram && <a href={launchConfig.socialLinks.instagram} target="_blank" rel="noopener noreferrer">Instagram</a>}{launchConfig.socialLinks.tiktok && <a href={launchConfig.socialLinks.tiktok} target="_blank" rel="noopener noreferrer">TikTok</a>}</> : 'To be confirmed'}</dd></div>
         </dl>
         {whatsappDigits && <a className="button button-outline button-small" href={`https://wa.me/${whatsappDigits}`} target="_blank" rel="noopener noreferrer" data-testid="link-whatsapp">WhatsApp Nabaat <ArrowRight size={14}/></a>}
-        <div className="prototype-note">The form below does not transmit or store your details. A WhatsApp link appears only after the founder confirms a number in the launch settings.</div>
+        <div className="prototype-note">Submitting sends your enquiry to Nabaat’s server for follow-up. No automatic reply is sent. A WhatsApp link appears only after the founder confirms a number in the launch settings.</div>
       </aside>
       <Form {...form}>
       <form onSubmit={form.handleSubmit(submit,()=>setStatus('error'))} noValidate data-testid="form-enquiry">
+        <input type="text" name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" style={{position:'absolute',left:'-10000px',width:1,height:1,opacity:0}}/>
         <div className="form-grid">
           <FormField control={form.control} name="name" render={({field})=><FormItem className="field"><FormLabel>Your name</FormLabel><FormControl><input {...field} autoComplete="name" data-testid="input-name"/></FormControl><FormMessage className="field-error"/></FormItem>}/>
           <FormField control={form.control} name="email" render={({field})=><FormItem className="field"><FormLabel>Email address</FormLabel><FormControl><input {...field} type="email" autoComplete="email" data-testid="input-email"/></FormControl><FormMessage className="field-error"/></FormItem>}/>
@@ -372,9 +386,9 @@ function Contact() {
           <FormField control={form.control} name="sample" render={({field})=><FormItem className="field"><FormLabel>Sample plant (optional)</FormLabel><FormControl><select {...field} data-testid="select-enquiry-product"><option value="">No specific sample</option>{products.map(p=><option key={p.slug} value={p.slug}>{p.name} · sample</option>)}</select></FormControl><FormMessage className="field-error"/></FormItem>}/>
           <FormField control={form.control} name="message" render={({field})=><FormItem className="field full"><FormLabel>Your message</FormLabel><FormControl><textarea {...field} placeholder="A little context helps us understand what you have in mind." data-testid="input-message"/></FormControl><FormMessage className="field-error"/></FormItem>}/>
         </div>
-        {status==='error' && <div className="status-message error" role="alert" data-testid="status-form-error">Please complete each required field with a valid email and a message of at least 10 characters.</div>}
-        {status==='not-sent' && <div className="status-message" role="status" data-testid="status-form-not-sent"><strong>Prototype only — your message was NOT sent.</strong> Nothing was transmitted or saved. Contact details will be added after founder confirmation.</div>}
-        <div style={{marginTop:20}}><button className="button" type="submit" data-testid="button-submit-enquiry">Review enquiry <ArrowRight size={14}/></button></div>
+        {status==='error' && <div className="status-message error" role="alert" data-testid="status-form-error">We couldn’t send your enquiry. Check the required fields and connection, then try again.</div>}
+        {status==='sent' && <div className="status-message" role="status" data-testid="status-form-sent"><strong>Your enquiry has been recorded.</strong> No automatic reply is sent; Nabaat’s response channels are being confirmed.</div>}
+        <div style={{marginTop:20}}><button className="button" type="submit" disabled={status==='sending'} data-testid="button-submit-enquiry">{status==='sending' ? 'Sending…' : 'Send enquiry'} <ArrowRight size={14}/></button></div>
       </form>
       </Form>
     </div>

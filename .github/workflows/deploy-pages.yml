@@ -1,0 +1,62 @@
+name: Build and deploy Nabaat
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.25.0
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Install workspace dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Typecheck workspace
+        run: pnpm run typecheck
+      - name: Build Nabaat for its GitHub Pages path
+        run: pnpm --filter @workspace/nabaat build
+        env:
+          PORT: 4173
+          BASE_PATH: /NABAAT/
+          VITE_API_BASE_URL: ${{ vars.NABAAT_API_URL }}
+      - name: Prepare Pages artifact and SPA fallback
+        run: |
+          cp artifacts/nabaat/dist/public/index.html artifacts/nabaat/dist/public/404.html
+          touch artifacts/nabaat/dist/public/.nojekyll
+      - name: Publish files to the configured Pages source branch
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin Nabat-github
+          git checkout --detach FETCH_HEAD
+          rm -rf assets images
+          rm -f index.html 404.html .nojekyll favicon.svg
+          cp -a artifacts/nabaat/dist/public/. .
+          git add -A
+          if git diff --cached --quiet; then
+            echo "GitHub Pages artifacts are already current."
+          else
+            git commit -m "Deploy Nabaat site from ${GITHUB_SHA}"
+            git push origin HEAD:Nabat-github
+          fi
