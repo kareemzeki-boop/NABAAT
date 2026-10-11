@@ -38,7 +38,7 @@ jobs:
         env:
           PORT: 4173
           BASE_PATH: /NABAAT/
-          VITE_API_BASE_URL: ${{ vars.NABAAT_API_URL }}
+          VITE_API_BASE_URL: https://workspaceapi-server-production-5d30.up.railway.app
       - name: Prepare Pages artifact and SPA fallback
         run: |
           cp artifacts/nabaat/dist/public/index.html artifacts/nabaat/dist/public/404.html

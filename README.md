@@ -10,7 +10,7 @@ Nabaat is a plant-and-flower storefront preview for Abu Dhabi. The current plant
 - **API endpoints:** `GET /api/healthz`, `GET /api/readyz`, and `POST /api/enquiries`.
 - **GitHub Pages:** GitHub Actions builds the site with the `/NABAAT/` base path and publishes the SPA fallback page.
 
-GitHub Pages serves static files only; it cannot run the Express API or PostgreSQL. The API therefore needs a container-capable service and a PostgreSQL database in production. The repository includes a Docker image and a Docker Compose setup for local operation, but the API is not publicly deployed by the Pages workflow.
+GitHub Pages serves static files only; it cannot run the Express API or PostgreSQL. Production uses Railway for the API container and managed PostgreSQL, while the static frontend remains on GitHub Pages.
 
 ## Run locally
 
@@ -27,19 +27,13 @@ To run Vite at the repository path locally, set `BASE_PATH=/NABAAT/`; the defaul
 
 The workflow at `.github/workflows/deploy-pages.yml` runs on pushes to `main`, builds the site, and publishes the generated files to the repository's existing `Nabat-github` Pages source branch. Keep **Settings → Pages** configured to deploy from that branch's root. The published URL is `https://kareemzeki-boop.github.io/NABAAT/`.
 
-For enquiry submissions to work on the public site, first deploy the API and PostgreSQL to a container-capable host, then configure:
-
-- API runtime `DATABASE_URL`: the provider's PostgreSQL connection string.
-- API runtime `CORS_ORIGIN`: include `https://kareemzeki-boop.github.io` (and any chosen custom website origin).
-- GitHub repository **Actions variable** `NABAAT_API_URL`: the public API origin only, for example `https://api.example.com` (no `/api` suffix).
-
-The variable is non-secret because browsers must know the public API origin. A push or manual workflow run then bakes it into the static frontend. Until it is set, the contact form shows a clear failure instead of claiming that an enquiry was delivered. Contact submissions are stored in PostgreSQL for later review; no email notification or automatic reply is configured because Nabaat's public contact details have not yet been confirmed.
+The production API is deployed at `https://workspaceapi-server-production-5d30.up.railway.app`. Railway provisions the `nabaat-postgres` database and injects its `DATABASE_URL` into the API; the API allows the GitHub Pages site origin through `CORS_ORIGIN`. The Pages build receives the API origin from `VITE_API_BASE_URL` in `.github/workflows/deploy-pages.yml`; update that value if the Railway domain changes, then push to `main` to publish the frontend. Contact submissions are stored in PostgreSQL for later review; no email notification or automatic reply is configured because Nabaat's public contact details have not yet been confirmed.
 
 ## Backend behavior
 
 `POST /api/enquiries` accepts a name, email, one of the displayed enquiry topics, an optional sample plant slug, and a message. The server validates and normalizes the values, rejects invalid input, limits request-body size, uses a honeypot field for basic bot filtering, and stores accepted enquiries with a timestamp and `new` status. It does not expose a public listing endpoint for private enquiries.
 
-The API creates its table and index at startup. The database volume in `docker-compose.yml` persists across container restarts; protect and back up a production database according to the chosen provider's guidance.
+The API creates its table and index at startup. The database volume in `docker-compose.yml` persists across local container restarts. Configure and verify production backups for the Railway PostgreSQL service separately.
 
 ## Checks
 
