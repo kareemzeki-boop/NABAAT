@@ -1,0 +1,12 @@
+{
+  "routes": [
+    { "path": "/", "title": "Nabaat Home" },
+    { "path": "/shop", "title": "Sample Plant Collection" },
+    { "path": "/plant/:slug", "title": "Plant Details" },
+    { "path": "/find-your-plant", "title": "Find Your Plant" },
+    { "path": "/plant-care", "title": "Plant Care" },
+    { "path": "/our-story", "title": "Our Story" },
+    { "path": "/contact", "title": "Contact Nabaat" },
+    { "path": "/admin", "title": "Nabaat Admin" }
+  ]
+}
