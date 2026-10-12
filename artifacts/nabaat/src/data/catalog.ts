@@ -14,6 +14,8 @@ export type Product = {
   size: string[];
   warning: string;
   care: string;
+  published?: boolean;
+  sortOrder?: number;
 };
 
 const sampleImage = (name: string) => `${import.meta.env.BASE_URL}images/${name}`;

@@ -1,4 +1,11 @@
-import { defineRailway, github, postgres, project, service } from "railway/iac";
+import {
+  defineRailway,
+  github,
+  postgres,
+  project,
+  service,
+  volume,
+} from "railway/iac";
 
 export default defineRailway(() => {
   const NABAAT = github("kareemzeki-boop/NABAAT", {
@@ -6,6 +13,10 @@ export default defineRailway(() => {
     checkSuites: false,
   });
   const nabaatPostgres = postgres("nabaat-postgres");
+  const nabaatImages = volume("nabaat-images", {
+    sizeMB: 1024,
+    region: "us-west2",
+  });
 
   const _workspaceapiZod = service("@workspace/api-zod", {
     source: NABAAT,
@@ -20,6 +31,7 @@ export default defineRailway(() => {
   const _workspaceapiServer = service("@workspace/api-server", {
     source: NABAAT,
     build: {
+      buildCommand: "pnpm --filter @workspace/api-server build",
       buildEnvironment: "V3",
       builder: "DOCKERFILE",
       dockerfilePath: "/Dockerfile",
@@ -39,6 +51,9 @@ export default defineRailway(() => {
     env: {
       DATABASE_URL: nabaatPostgres.env.DATABASE_URL,
       CORS_ORIGIN: "https://kareemzeki-boop.github.io",
+    },
+    volumeMounts: {
+      "/data": nabaatImages,
     },
     replicas: { "us-west2": 1 },
     networking: { privateNetworkEndpoint: "workspaceapi-server" },
@@ -102,6 +117,7 @@ export default defineRailway(() => {
     variables: { managed: true },
     resources: [
       nabaatPostgres,
+      nabaatImages,
       _workspaceapiZod,
       _workspaceapiServer,
       _workspacemockupSandbox,

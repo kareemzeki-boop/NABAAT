@@ -8,7 +8,14 @@ export const enquiriesTable = pgTable("enquiries", {
   sampleSlug: varchar("sample_slug", { length: 80 }),
   message: text("message").notNull(),
   status: varchar("status", { length: 20 }).notNull().default("new"),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  adminNote: text("admin_note"),
+  followUpAt: timestamp("follow_up_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
 });
 
 export type Enquiry = typeof enquiriesTable.$inferSelect;

@@ -25,6 +25,11 @@ services:
       PORT: 3000
       DATABASE_URL: ${DATABASE_URL:-postgresql://nabaat:nabaat-local-only@db:5432/nabaat}
       CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5173,http://127.0.0.1:5173,https://kareemzeki-boop.github.io}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+      PUBLIC_API_ORIGIN: ${PUBLIC_API_ORIGIN:-http://localhost:3000}
+      UPLOAD_DIR: /data/uploads
+    volumes:
+      - ./tmp/nabaat-uploads:/data/uploads
     ports:
       - "${API_PORT:-3000}:3000"
     depends_on:
